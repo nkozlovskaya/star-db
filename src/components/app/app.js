@@ -1,64 +1,61 @@
 import React, { Component } from 'react';
 import Header from '../header';
 import RandomPlanet from '../random-planet';
-import ItemList from '../item-list';
-import PersonDetails from '../person-details';
-import ErrorButton from '../error-button';
-import PeoplePage from '../people-page';
+import DummySwapiService from '../../services/dummy-swapi-service';
+import SwapiService from '../../services/swapi-service';
+import ErrorBoundry from '../error-boundry';
+import { SwapiServiceProvider } from '../swapi-service-context';
+import ErrorIndicator from '../error-indicator/error-indicator';
+import { PeoplePage, PlanetPage, StarshipPage } from '../pages';
 
 import './app.css';
-import ErrorIndicator from '../error-indicator/error-indicator';
-
-
 export default class App extends Component {
 
   state = {
-    showRandomPlanet: true,
-    hasError: false
+    hasError: false,
+    swapiService: new SwapiService()
   };
 
-  toggleRandomPlanet = () => {
-    this.setState((state) => {
+  onServiceChange = () => {
+    this.setState(({ swapiService }) => {
+      const Service = swapiService instanceof SwapiService ? DummySwapiService : SwapiService;
+
+      console.log('switched to', Service.name);
+
       return {
-        showRandomPlanet: !state.showRandomPlanet
-      }
+        swapiService: new Service()
+      };
     });
   };
 
   componentDidCatch() {
-    console.log('componentDidCatch');
     this.setState({ hasError: true })
   }
 
   render() {
-
-    const planet = this.state.showRandomPlanet ?
-      <RandomPlanet /> :
-      null;
 
     if (this.state.hasError) {
       return <ErrorIndicator />
     }
 
     return (
-      <div className="stardb-app">
-        <Header />
-        { planet}
+      <ErrorBoundry>
+        <SwapiServiceProvider value={this.state.swapiService}>
+          <div className="stardb-app">
 
-        <button
-          className="toggle-planet btn btn-warning btn-lg"
-          onClick={this.toggleRandomPlanet}>
-          Toggle Random Planet
-        </button>
-        <ErrorButton />
+            <Header onServiceChange={this.onServiceChange} />
 
-        <PeoplePage />
+            <RandomPlanet />
 
-        <PeoplePage />
+            <PeoplePage />
 
-        <PeoplePage />
+            <PlanetPage />
 
-      </div>
+            <StarshipPage />
+
+          </div>
+        </SwapiServiceProvider>
+      </ErrorBoundry>
     );
   }
 }
